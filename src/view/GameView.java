@@ -1,0 +1,75 @@
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.KeyListener;
+import java.util.List;
+import model.GameObject;
+import theme.GameTheme;
+
+public class GameView extends JFrame {
+    private GamePanel canvas;
+
+    public GameView(GameTheme theme) {
+        setTitle("Game Arena - " + theme.getName());
+        setSize(800, 600); // Ukuran arena
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setResizable(false);
+
+        // Buat canvas tempat menggambar
+        canvas = new GamePanel(theme);
+        add(canvas);
+    }
+
+    // Method agar Presenter bisa minta update tampilan
+    public void render(List<GameObject> objects, int score, int ammo, int missed) {
+        canvas.updateObjects(objects, score, ammo, missed);
+        canvas.repaint(); // Ini akan memicu paintComponent di bawah
+    }
+
+    // Method untuk menyambungkan Keyboard Input
+    public void addInputListener(KeyListener k) {
+        this.addKeyListener(k);
+    }
+
+    // --- INNER CLASS: Area Menggambar ---
+    private class GamePanel extends JPanel {
+        private List<GameObject> objects;
+        private GameTheme theme;
+        private int score, ammo, missed;
+
+        public GamePanel(GameTheme theme) {
+            this.theme = theme;
+            this.setBackground(theme.getBackgroundColor());
+        }
+
+        public void updateObjects(List<GameObject> objects, int s, int a, int m) {
+            this.objects = objects;
+            this.score = s;
+            this.ammo = a;
+            this.missed = m;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g); // Bersihkan layar
+            
+            // 1. Gambar Status (Skor/Peluru)
+            g.setColor(Color.BLACK);
+            g.setFont(new Font("Arial", Font.BOLD, 14));
+            g.drawString("Skor: " + score, 10, 20);
+            g.drawString("Peluru: " + ammo, 10, 40);
+            g.drawString("Meleset: " + missed, 10, 60);
+
+            // 2. Gambar Semua Objek (Player, Alien, dll)
+            if (objects != null) {
+                for (GameObject obj : objects) {
+                    g.setColor(obj.getColor());
+                    // Nanti di sini bisa diganti g.drawImage() kalau mau pakai aset gambar
+                    g.fillRect(obj.getX(), obj.getY(), obj.getWidth(), obj.getHeight());
+                }
+            }
+        }
+    }
+}
