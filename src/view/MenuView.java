@@ -1,8 +1,13 @@
 package view;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.font.FontRenderContext;
+import java.awt.font.TextLayout;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.util.List;
 import model.TBenefit;
 import theme.*;
@@ -11,38 +16,81 @@ public class MenuView extends JFrame implements IMenuView {
     private JTable table;
     private DefaultTableModel tableModel;
     private JTextField txtUsername;
-    private JComboBox<GameTheme> comboTheme; // Dropdown tema
+    private JComboBox<GameTheme> comboTheme;
     private JButton btnPlay, btnQuit;
+    private Image backgroundImage;
 
     public MenuView() {
         setTitle("Hide and Seek The Challenge");
         setSize(500, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setLayout(new BorderLayout(10, 10));
 
-        // 1. Judul
-        JLabel lblTitle = new JLabel("HIDE AND SEEK THE CHALLENGE", SwingConstants.CENTER);
-        lblTitle.setFont(new Font("Serif", Font.BOLD, 18));
-        add(lblTitle, BorderLayout.NORTH);
+        // 1. Load Gambar Background
+        // Pastikan file gambar ada di folder project kamu: src/assets/images/menu_bg.png
+        backgroundImage = new ImageIcon("src/assets/images/menu_bg.png").getImage();
 
-        // 2. Panel Tengah (Input & Tabel)
+        // 2. Custom Panel untuk Background Image
+        JPanel mainPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                if (backgroundImage != null) {
+                    g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+                }
+            }
+        };
+        mainPanel.setLayout(new BorderLayout(10, 10));
+        setContentPane(mainPanel);
+
+        // --- JUDUL DENGAN OUTLINE ---
+        // Menggunakan class khusus OutlineLabel (ada di paling bawah file ini)
+        OutlineLabel lblTitle = new OutlineLabel("HIDE AND SEEK THE CHALLENGE");
+        lblTitle.setFont(new Font("Serif", Font.BOLD, 26)); 
+        lblTitle.setForeground(Color.WHITE);   // Warna Isi: Putih
+        lblTitle.setOutlineColor(Color.BLACK); // Warna Pinggir: Hitam
+        lblTitle.setOutlineThickness(3.0f);    // Ketebalan garis
+        
+        JPanel titlePanel = new JPanel(new BorderLayout());
+        titlePanel.setOpaque(false);
+        titlePanel.add(lblTitle, BorderLayout.CENTER);
+        titlePanel.setBorder(BorderFactory.createEmptyBorder(25, 0, 10, 0));
+        add(titlePanel, BorderLayout.NORTH);
+
+        // --- PANEL TENGAH (INPUT & TABEL) ---
         JPanel centerPanel = new JPanel();
         centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+        centerPanel.setOpaque(false);
 
-        // Input Username
+        // 1. Input Username
         JPanel inputPanel = new JPanel(new FlowLayout());
-        inputPanel.add(new JLabel("Username: "));
+        inputPanel.setOpaque(false);
+        
+        // Label Username juga dikasih outline tipis biar kebaca
+        OutlineLabel lblUser = new OutlineLabel("Username: ");
+        lblUser.setFont(new Font("Arial", Font.BOLD, 14));
+        lblUser.setForeground(Color.WHITE);
+        lblUser.setOutlineColor(Color.BLACK);
+        lblUser.setOutlineThickness(2.0f);
+        inputPanel.add(lblUser);
+        
         txtUsername = new JTextField(15);
         inputPanel.add(txtUsername);
         centerPanel.add(inputPanel);
         
-        // Pilihan Tema (Fitur Tambahan)
+        // 2. Pilihan Tema
         JPanel themePanel = new JPanel(new FlowLayout());
-        themePanel.add(new JLabel("Pilih Tema: "));
+        themePanel.setOpaque(false);
+        
+        OutlineLabel lblTheme = new OutlineLabel("Pilih Tema: ");
+        lblTheme.setFont(new Font("Arial", Font.BOLD, 14));
+        lblTheme.setForeground(Color.WHITE);
+        lblTheme.setOutlineColor(Color.BLACK);
+        lblTheme.setOutlineThickness(2.0f);
+        themePanel.add(lblTheme);
+        
         GameTheme[] themes = { new DefaultTheme(), new DarkTheme() };
         comboTheme = new JComboBox<>(themes);
-        // Custom renderer agar yang tampil di combo box adalah nama temanya
         comboTheme.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -56,27 +104,103 @@ public class MenuView extends JFrame implements IMenuView {
         themePanel.add(comboTheme);
         centerPanel.add(themePanel);
 
-        // Tabel Data (TBenefit)
-        String[] columns = {"Username", "Skor", "Peluru Meleset", "Sisa Peluru"};
+        // --- TABEL CUSTOM (SEMI-TRANSPARAN GELAP) ---
+        String[] columns = {"Username", "Skor", "Meleset", "Sisa Peluru"};
         tableModel = new DefaultTableModel(columns, 0);
         table = new JTable(tableModel);
+
+        // Setting Dasar Tabel
+        table.setOpaque(false);
+        ((DefaultTableCellRenderer)table.getDefaultRenderer(Object.class)).setOpaque(false);
+        table.setShowGrid(false); 
+        table.setRowHeight(30);   
+        
+        // Custom Renderer untuk Baris Tabel (Background Gelap Transparan)
+        DefaultTableCellRenderer customRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                
+                // Pastikan komponen boleh diwarnai (opaque true)
+                if (c instanceof JComponent) ((JComponent)c).setOpaque(true);
+                
+                // LOGIKA WARNA BACKGROUND BARIS
+                if (isSelected) {
+                    // Kalau dipilih: Sedikit lebih terang
+                    c.setBackground(new Color(255, 255, 255, 60)); 
+                } else {
+                    // Kalau diam: Hitam Transparan (180 dari 255) -> Cukup Gelap
+                    c.setBackground(new Color(0, 0, 0, 180)); 
+                }
+                
+                // Warna Teks & Font
+                c.setForeground(Color.WHITE);
+                c.setFont(new Font("Arial", Font.BOLD, 12));
+
+                // Garis Pemisah (Border Bawah) Putih Tipis Transparan
+                setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(255, 255, 255, 80)));
+                
+                return c;
+            }
+        };
+
+        // Terapkan Renderer ke semua kolom
+        for (int i = 0; i < table.getColumnCount(); i++) {
+            table.getColumnModel().getColumn(i).setCellRenderer(customRenderer);
+        }
+
+        // Setting Header (Judul Kolom) -> Hitam Pekat Transparan
+        table.getTableHeader().setOpaque(false);
+        table.getTableHeader().setBackground(new Color(0, 0, 0, 230)); // 230 = Sangat Gelap
+        table.getTableHeader().setForeground(Color.WHITE);
+        table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 13));
+        
+        // ScrollPane (Wadah Tabel)
         JScrollPane scrollPane = new JScrollPane(table);
-        centerPanel.add(scrollPane);
+        scrollPane.setPreferredSize(new Dimension(450, 200));
+        scrollPane.setOpaque(false);
+        scrollPane.getViewport().setOpaque(false); 
+        scrollPane.getViewport().setBackground(new Color(0,0,0,0)); // Viewport bening
+        scrollPane.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2)); // Border Luar Putih
+
+        // Wrapper Panel supaya tabel tidak melebar seukuran layar
+        JPanel tableWrapper = new JPanel();
+        tableWrapper.setOpaque(false);
+        tableWrapper.add(scrollPane);
+        centerPanel.add(tableWrapper);
 
         add(centerPanel, BorderLayout.CENTER);
 
-        // 3. Tombol Bawah
+        // --- TOMBOL BAWAH ---
         JPanel buttonPanel = new JPanel();
-        btnPlay = new JButton("Play");
-        btnQuit = new JButton("Quit");
+        buttonPanel.setOpaque(false);
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0)); // Jarak bawah
+        
+        btnPlay = new JButton("PLAY GAME");
+        btnQuit = new JButton("QUIT");
+        
+        // Style Tombol Play
+        btnPlay.setFont(new Font("Arial", Font.BOLD, 14));
+        btnPlay.setBackground(new Color(34, 139, 34)); // Hijau
+        btnPlay.setForeground(Color.WHITE);
+        btnPlay.setFocusPainted(false);
+        
+        // Style Tombol Quit
+        btnQuit.setFont(new Font("Arial", Font.BOLD, 14));
+        btnQuit.setBackground(new Color(178, 34, 34)); // Merah
+        btnQuit.setForeground(Color.WHITE);
+        btnQuit.setFocusPainted(false);
+
         buttonPanel.add(btnPlay);
         buttonPanel.add(btnQuit);
         add(buttonPanel, BorderLayout.SOUTH);
     }
 
+    // --- IMPLEMENTASI METHOD DARI INTERFACE ---
+
     @Override
     public void setTableData(List<TBenefit> users) {
-        tableModel.setRowCount(0); // Reset tabel
+        tableModel.setRowCount(0); 
         for (TBenefit user : users) {
             Object[] row = {
                 user.getUsername(),
@@ -110,12 +234,71 @@ public class MenuView extends JFrame implements IMenuView {
 
     @Override
     public void close() {
-        this.dispose(); // Menutup jendela menu
+        this.dispose(); 
     }
     
-    // show() sudah ada bawaan dari JFrame, tapi kita override untuk jelas di interface
     @Override 
     public void display() {
         this.setVisible(true);
+    }
+}
+
+// ==========================================
+// CLASS TAMBAHAN UNTUK TEXT OUTLINE
+// (Jangan dihapus, ini dipakai untuk judul & label)
+// ==========================================
+class OutlineLabel extends JLabel {
+    private Color outlineColor = Color.BLACK;
+    private float strokeThickness = 3f;
+
+    public OutlineLabel(String text) {
+        super(text);
+        setHorizontalAlignment(SwingConstants.CENTER);
+    }
+
+    public void setOutlineColor(Color c) {
+        this.outlineColor = c;
+    }
+    
+    public void setOutlineThickness(float f) {
+        this.strokeThickness = f;
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        Graphics2D g2 = (Graphics2D) g.create();
+        
+        // Aktifkan Anti-aliasing biar teks mulus
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+
+        String text = getText();
+        if (text == null || text.isEmpty()) {
+            super.paintComponent(g);
+            return;
+        }
+
+        Font font = getFont();
+        FontRenderContext frc = g2.getFontRenderContext();
+        TextLayout textLayout = new TextLayout(text, font, frc);
+
+        // Hitung posisi tengah (Center)
+        Rectangle2D bounds = textLayout.getBounds();
+        double x = (getWidth() - bounds.getWidth()) / 2;
+        double y = (getHeight() - bounds.getHeight()) / 2 + textLayout.getAscent();
+        
+        // Buat Shape teksnya
+        java.awt.Shape shape = textLayout.getOutline(AffineTransform.getTranslateInstance(x, y));
+
+        // 1. Gambar OUTLINE (Garis Tepi)
+        g2.setColor(outlineColor);
+        g2.setStroke(new BasicStroke(strokeThickness, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g2.draw(shape);
+
+        // 2. Gambar ISI (Fill)
+        g2.setColor(getForeground());
+        g2.fill(shape);
+
+        g2.dispose();
     }
 }
