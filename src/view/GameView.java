@@ -12,7 +12,7 @@ public class GameView extends JFrame {
 
     public GameView(GameTheme theme) {
         setTitle("Game Arena - " + theme.getName());
-        setSize(800, 600); // Ukuran arena
+        setSize(1024, 768); // Ukuran arena
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);

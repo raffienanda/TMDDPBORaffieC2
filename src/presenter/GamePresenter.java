@@ -13,6 +13,7 @@ import model.TBenefit;
 import model.TBenefitModel;
 import theme.GameTheme;
 import view.GameView;
+import view.MenuView;
 
 public class GamePresenter implements Runnable, KeyListener {
     private GameView view;
@@ -38,7 +39,7 @@ public class GamePresenter implements Runnable, KeyListener {
         this.view.addInputListener(this);
 
         // 1. Setup Player (Tengah)
-        player = new GameObject(375, 300, 30, 30, Color.BLUE, "PLAYER");
+        player = new GameObject(497, 600, 70, 70, Color.BLUE, "PLAYER");
 
         // 2. Setup Data Pemain (Reset Skor & Meleset, Sisa Peluru diambil dari DB)
         if (dbModel.isUsernameExist(username)) {
@@ -59,15 +60,34 @@ public class GamePresenter implements Runnable, KeyListener {
     }
 
     private void generateObstacles() {
-        // Buat 5-8 batu di posisi acak
-        int count = 5 + random.nextInt(4);
-        for (int i = 0; i < count; i++) {
-            int ox = random.nextInt(700);
-            int oy = random.nextInt(400); // Jangan terlalu bawah (tempat spawn alien)
-            // Pastikan tidak menimpa player
-            if (Math.abs(ox - player.getX()) > 50 || Math.abs(oy - player.getY()) > 50) {
+        obstacles.clear(); // Pastikan list bersih dulu
+        int count = 5 + random.nextInt(4); // Mau bikin 5-8 batu
+        int attempts = 0; // Penjaga biar gak infinite loop kalau layar penuh
+        
+        while (obstacles.size() < count && attempts < 100) {
+            int ox = random.nextInt(900);
+            int oy = random.nextInt(500); 
+            
+            // 1. Cek apakah menimpa Player?
+            // (Jarak X > 50 ATAU Jarak Y > 50 berarti aman, tidak kena)
+            boolean safeFromPlayer = Math.abs(ox - player.getX()) > 60 || Math.abs(oy - player.getY()) > 60;
+            
+            // 2. Cek apakah menimpa Batu Lain?
+            boolean safeFromRocks = true;
+            for (GameObject existingRock : obstacles) {
+                // Kalau jarak X dekat DAN jarak Y dekat, berarti numpuk
+                if (Math.abs(ox - existingRock.getX()) < 60 && Math.abs(oy - existingRock.getY()) < 60) {
+                    safeFromRocks = false;
+                    break;
+                }
+            }
+            
+            // Kalau aman dari Player DAN aman dari Batu lain, baru tambahkan
+            if (safeFromPlayer && safeFromRocks) {
                 obstacles.add(new GameObject(ox, oy, 50, 50, Color.GRAY, "OBSTACLE"));
             }
+            
+            attempts++;
         }
     }
 
@@ -94,16 +114,16 @@ public class GamePresenter implements Runnable, KeyListener {
         // 1. Gerakan Player
         int speed = 5;
         if (up && player.getY() > 0) player.setY(player.getY() - speed);
-        if (down && player.getY() < 550) player.setY(player.getY() + speed);
+        if (down && player.getY() < 708) player.setY(player.getY() + speed);
         if (left && player.getX() > 0) player.setX(player.getX() - speed);
-        if (right && player.getX() < 770) player.setX(player.getX() + speed);
+        if (right && player.getX() < 984) player.setX(player.getX() + speed);
 
         // 2. Spawn Alien (Dari Bawah)
         spawnTimer++;
         if (spawnTimer > 100) { // Setiap ~1.5 detik
-            int ax = random.nextInt(750);
+            int ax = random.nextInt(974);
             // Alien muncul di Y=550 (Bawah) bergerak ke atas/random
-            aliens.add(new GameObject(ax, 550, 40, 40, Color.RED, "HUMAN"));
+            aliens.add(new GameObject(ax, 718, 40, 40, Color.RED, "HUMAN"));
             spawnTimer = 0;
         }
 
@@ -157,7 +177,7 @@ public class GamePresenter implements Runnable, KeyListener {
             }
 
             // Hapus jika keluar layar
-            if (b.getY() < 0 || b.getY() > 600) {
+            if (b.getY() < 0 || b.getY() > 768) {
                 if (b.getType().equals("ENEMY_BULLET")) {
                     // Jika peluru alien keluar layar -> Player dapat bonus peluru
                     playerStats.setPeluruMeleset(playerStats.getPeluruMeleset() + 1);
@@ -213,12 +233,16 @@ public class GamePresenter implements Runnable, KeyListener {
         isRunning = false;
         JOptionPane.showMessageDialog(view, "GAME OVER!\nSkor: " + playerStats.getSkor());
         
-        // Simpan Data ke DB
+        // 1. Simpan Data ke Database
         dbModel.updateOrInsert(playerStats);
         
-        // Kembali ke menu / Keluar
+        // 2. Tutup Jendela Game
         view.dispose();
-        System.exit(0); // Atau kembali ke MenuPresenter (perlu refactor dikit buat balik menu)
+        
+        // 3. --- LOGIKA BALIK KE LOBBY ---
+        System.out.println("Kembali ke Lobby...");
+        MenuView menu = new MenuView();          // Bikin tampilan menu baru
+        new MenuPresenter(menu, dbModel);        // Jalankan logika menu
     }
 
     private void draw() {

@@ -10,14 +10,14 @@ public interface GameTheme {
     
     // Tambahan method untuk ambil gambar
     default Image getPlayerImage() {
-        return new ImageIcon("src/assets/alien.png").getImage();
+        return new ImageIcon("src/assets/images/alien.png").getImage();
     }
     
     default Image getEnemyImage() {
-        return new ImageIcon("src/assets/human.png").getImage();
+        return new ImageIcon("src/assets/images/human.png").getImage();
     }
     
     default Image getObstacleImage() {
-        return new ImageIcon("src/assets/rock.png").getImage();
+        return new ImageIcon("src/assets/images/rock.png").getImage();
     }
 }
