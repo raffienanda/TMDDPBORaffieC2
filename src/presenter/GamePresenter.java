@@ -39,7 +39,7 @@ public class GamePresenter implements Runnable, KeyListener {
         this.view.addInputListener(this);
 
         // 1. Setup Player (Tengah)
-        player = new GameObject(497, 600, 70, 70, Color.BLUE, "PLAYER");
+        player = new GameObject(487, 290, 40, 40, Color.BLUE, "PLAYER");
 
         // 2. Setup Data Pemain (Reset Skor & Meleset, Sisa Peluru diambil dari DB)
         if (dbModel.isUsernameExist(username)) {
@@ -114,16 +114,16 @@ public class GamePresenter implements Runnable, KeyListener {
         // 1. Gerakan Player
         int speed = 5;
         if (up && player.getY() > 0) player.setY(player.getY() - speed);
-        if (down && player.getY() < 708) player.setY(player.getY() + speed);
+        if (down && player.getY() < 700) player.setY(player.getY() + speed);
         if (left && player.getX() > 0) player.setX(player.getX() - speed);
-        if (right && player.getX() < 984) player.setX(player.getX() + speed);
+        if (right && player.getX() < 970) player.setX(player.getX() + speed);
 
         // 2. Spawn Alien (Dari Bawah)
         spawnTimer++;
         if (spawnTimer > 100) { // Setiap ~1.5 detik
-            int ax = random.nextInt(974);
+            int ax = random.nextInt(950);
             // Alien muncul di Y=550 (Bawah) bergerak ke atas/random
-            aliens.add(new GameObject(ax, 718, 40, 40, Color.RED, "HUMAN"));
+            aliens.add(new GameObject(ax, 768, 40, 40, Color.RED, "HUMAN"));
             spawnTimer = 0;
         }
 
