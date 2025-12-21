@@ -30,7 +30,6 @@ public class GamePresenter implements Runnable, KeyListener {
     // Variabel Bantu
     private boolean up, down, left, right;
     private int spawnTimer = 0;      // Timer untuk spawn alien
-    private int shootTimer = 0;      // Timer untuk alien menembak
     private Random random = new Random();
 
     public GamePresenter(String username, GameTheme theme, TBenefitModel dbModel) {
