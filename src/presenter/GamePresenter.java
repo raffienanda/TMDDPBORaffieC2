@@ -103,7 +103,7 @@ public class GamePresenter implements Runnable, KeyListener {
         if (spawnTimer > 100) { // Setiap ~1.5 detik
             int ax = random.nextInt(750);
             // Alien muncul di Y=550 (Bawah) bergerak ke atas/random
-            aliens.add(new GameObject(ax, 550, 40, 40, Color.RED, "ALIEN"));
+            aliens.add(new GameObject(ax, 550, 40, 40, Color.RED, "HUMAN"));
             spawnTimer = 0;
         }
 

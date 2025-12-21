@@ -1,9 +1,23 @@
 package theme;
 
 import java.awt.Color;
+import java.awt.Image;
+import javax.swing.ImageIcon;
 
 public interface GameTheme {
-    String getName();           // Nama tema (misal: "Default", "Space")
-    Color getBackgroundColor(); // Warna latar belakang saat main
-    // Nanti bisa ditambah: getPlayerImage(), getAlienImage(), dll.
+    String getName();
+    Color getBackgroundColor();
+    
+    // Tambahan method untuk ambil gambar
+    default Image getPlayerImage() {
+        return new ImageIcon("src/assets/alien.png").getImage();
+    }
+    
+    default Image getEnemyImage() {
+        return new ImageIcon("src/assets/human.png").getImage();
+    }
+    
+    default Image getObstacleImage() {
+        return new ImageIcon("src/assets/rock.png").getImage();
+    }
 }

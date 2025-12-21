@@ -54,7 +54,7 @@ public class GameView extends JFrame {
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g); // Bersihkan layar
-            
+
             // 1. Gambar Status (Skor/Peluru)
             g.setColor(Color.BLACK);
             g.setFont(new Font("Arial", Font.BOLD, 14));
@@ -65,9 +65,33 @@ public class GameView extends JFrame {
             // 2. Gambar Semua Objek (Player, Alien, dll)
             if (objects != null) {
                 for (GameObject obj : objects) {
-                    g.setColor(obj.getColor());
-                    // Nanti di sini bisa diganti g.drawImage() kalau mau pakai aset gambar
-                    g.fillRect(obj.getX(), obj.getY(), obj.getWidth(), obj.getHeight());
+                    Image img = null;
+
+                    // Cek tipe objek untuk menentukan gambar mana yang dipakai
+                    switch (obj.getType()) {
+                        case "PLAYER":
+                            // Player (Alien) tetap pakai getPlayerImage
+                            img = theme.getPlayerImage();
+                            break;
+
+                        case "HUMAN": // <-- GANTI CASE INI DARI "ALIEN" JADI "HUMAN"
+                            // Musuh (Manusia) pakai gambar musuh
+                            img = theme.getEnemyImage(); // Sesuaikan nama method di interface tadi
+                            break;
+
+                        case "OBSTACLE":
+                            img = theme.getObstacleImage();
+                            break;
+                        default:
+                            // Untuk peluru, kita tetap pakai kotak warna saja biar performa ringan
+                            g.setColor(obj.getColor());
+                            g.fillRect(obj.getX(), obj.getY(), obj.getWidth(), obj.getHeight());
+                            continue; // Skip drawImage di bawah
+                    }
+
+                    if (img != null) {
+                        g.drawImage(img, obj.getX(), obj.getY(), obj.getWidth(), obj.getHeight(), null);
+                    }
                 }
             }
         }
