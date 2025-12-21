@@ -1,15 +1,17 @@
 package theme;
 
-import java.awt.Color;
+import java.awt.Image;
+import javax.swing.ImageIcon;
 
 public class DefaultTheme implements GameTheme {
     @Override
     public String getName() {
-        return "Default (Clean White)";
+        return "Alien Hometown";
     }
 
     @Override
-    public Color getBackgroundColor() {
-        return Color.WHITE; // Sesuai contoh di dokumen PDF
+    public Image getBackgroundImage() {
+        // Pastikan kamu punya file ini atau ganti namanya
+        return new ImageIcon("src/assets/images/AlienHometown_bg.png").getImage(); 
     }
 }

@@ -7,6 +7,7 @@ import javax.swing.JOptionPane;
 import model.TBenefit;
 import model.TBenefitModel;
 import view.IMenuView;
+import view.StoryView; // <--- Jangan lupa import ini
 import theme.GameTheme;
 
 public class MenuPresenter {
@@ -21,21 +22,16 @@ public class MenuPresenter {
         this.view.addPlayListener(new PlayAction());
         this.view.addQuitListener(new QuitAction());
 
-        // Tampilkan data awal di tabel
         loadTableData();
-
-        // Tampilkan GUI
         this.view.display();
     }
 
     private void loadTableData() {
-        // Minta data ke Model
         List<TBenefit> data = model.getAllBenefits();
-        // Update View
         view.setTableData(data);
     }
 
-    // Class Listener untuk Tombol Play
+    // --- CLASS LISTENER TOMBOL PLAY (DIMODIFIKASI) ---
     class PlayAction implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -48,15 +44,26 @@ public class MenuPresenter {
                 return;
             }
             
-            System.out.println("Memulai Game untuk: " + username);
-            view.close(); // Tutup menu
+            // 1. Tutup Menu Dulu
+            view.close(); 
             
-            // Masuk ke Game Presenter
-            new GamePresenter(username, selectedTheme, model); 
+            // 2. Siapkan Gambar Cerita
+            String[] storyImages = {
+                "src/assets/images/Family_Scene.jpg",
+                "src/assets/images/HumanAttack_Scene.jpg",
+                "src/assets/images/AlienAttack_Scene.jpg"
+            };
+
+            // 3. Buka Story View
+            new StoryView(storyImages, () -> {
+                
+                System.out.println("Cerita selesai. Memulai Game untuk: " + username);
+                new GamePresenter(username, selectedTheme, model); 
+                
+            }).display();
         }
     }
 
-    // Class Listener untuk Tombol Quit
     class QuitAction implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {

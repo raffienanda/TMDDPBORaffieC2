@@ -82,7 +82,7 @@ public class MenuView extends JFrame implements IMenuView {
         JPanel themePanel = new JPanel(new FlowLayout());
         themePanel.setOpaque(false);
         
-        OutlineLabel lblTheme = new OutlineLabel("Pilih Tema: ");
+        OutlineLabel lblTheme = new OutlineLabel("Pilih Arena: ");
         lblTheme.setFont(new Font("Arial", Font.BOLD, 14));
         lblTheme.setForeground(Color.WHITE);
         lblTheme.setOutlineColor(Color.BLACK);

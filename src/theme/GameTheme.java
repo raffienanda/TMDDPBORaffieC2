@@ -1,14 +1,15 @@
 package theme;
 
-import java.awt.Color;
 import java.awt.Image;
 import javax.swing.ImageIcon;
 
 public interface GameTheme {
     String getName();
-    Color getBackgroundColor();
     
-    // Tambahan method untuk ambil gambar
+    // GANTI: Dari Color ke Image
+    Image getBackgroundImage(); 
+    
+    // Method gambar aset lain
     default Image getPlayerImage() {
         return new ImageIcon("src/assets/images/alien.png").getImage();
     }

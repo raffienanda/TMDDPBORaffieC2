@@ -12,7 +12,7 @@ public class GameView extends JFrame {
 
     public GameView(GameTheme theme) {
         setTitle("Game Arena - " + theme.getName());
-        setSize(1024, 768); // Ukuran arena
+        setSize(1024, 768); 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
@@ -22,13 +22,11 @@ public class GameView extends JFrame {
         add(canvas);
     }
 
-    // Method agar Presenter bisa minta update tampilan
     public void render(List<GameObject> objects, int score, int ammo, int missed) {
         canvas.updateObjects(objects, score, ammo, missed);
-        canvas.repaint(); // Ini akan memicu paintComponent di bawah
+        canvas.repaint(); 
     }
 
-    // Method untuk menyambungkan Keyboard Input
     public void addInputListener(KeyListener k) {
         this.addKeyListener(k);
     }
@@ -37,11 +35,14 @@ public class GameView extends JFrame {
     private class GamePanel extends JPanel {
         private List<GameObject> objects;
         private GameTheme theme;
+        private Image backgroundImage; // Simpan gambar background
         private int score, ammo, missed;
 
         public GamePanel(GameTheme theme) {
             this.theme = theme;
-            this.setBackground(theme.getBackgroundColor());
+            
+            // LOAD GAMBAR BACKGROUND DI SINI
+            this.backgroundImage = theme.getBackgroundImage();
         }
 
         public void updateObjects(List<GameObject> objects, int s, int a, int m) {
@@ -55,38 +56,52 @@ public class GameView extends JFrame {
         protected void paintComponent(Graphics g) {
             super.paintComponent(g); // Bersihkan layar
 
-            // 1. Gambar Status (Skor/Peluru)
+            // 1. GAMBAR BACKGROUND (Paling Bawah)
+            if (backgroundImage != null) {
+                // Gambar full satu layar
+                g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+            } else {
+                // Fallback kalau gambar gagal load: Pakai warna hitam
+                g.setColor(Color.BLACK);
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+
+            // 2. Gambar Status (Skor/Peluru)
+            // Kasih outline putih sedikit biar kebaca kalau background gelap
+            g.setFont(new Font("Arial", Font.BOLD, 16));
+            
+            // Bayangan teks (biar jelas)
             g.setColor(Color.BLACK);
-            g.setFont(new Font("Arial", Font.BOLD, 14));
+            g.drawString("Skor: " + score, 12, 22);
+            g.drawString("Peluru: " + ammo, 12, 42);
+            g.drawString("Meleset: " + missed, 12, 62);
+            
+            // Teks Utama (Putih)
+            g.setColor(Color.WHITE);
             g.drawString("Skor: " + score, 10, 20);
             g.drawString("Peluru: " + ammo, 10, 40);
             g.drawString("Meleset: " + missed, 10, 60);
 
-            // 2. Gambar Semua Objek (Player, Alien, dll)
+            // 3. Gambar Semua Objek (Player, Alien, dll)
             if (objects != null) {
                 for (GameObject obj : objects) {
                     Image img = null;
 
-                    // Cek tipe objek untuk menentukan gambar mana yang dipakai
                     switch (obj.getType()) {
                         case "PLAYER":
-                            // Player (Alien) tetap pakai getPlayerImage
                             img = theme.getPlayerImage();
                             break;
-
-                        case "HUMAN": // <-- GANTI CASE INI DARI "ALIEN" JADI "HUMAN"
-                            // Musuh (Manusia) pakai gambar musuh
-                            img = theme.getEnemyImage(); // Sesuaikan nama method di interface tadi
+                        case "HUMAN": 
+                            img = theme.getEnemyImage(); 
                             break;
-
                         case "OBSTACLE":
                             img = theme.getObstacleImage();
                             break;
                         default:
-                            // Untuk peluru, kita tetap pakai kotak warna saja biar performa ringan
+                            // Objek tanpa gambar (misal peluru)
                             g.setColor(obj.getColor());
                             g.fillRect(obj.getX(), obj.getY(), obj.getWidth(), obj.getHeight());
-                            continue; // Skip drawImage di bawah
+                            continue; 
                     }
 
                     if (img != null) {
