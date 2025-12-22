@@ -5,11 +5,8 @@ import javax.swing.ImageIcon;
 
 public interface GameTheme {
     String getName();
-    
-    // GANTI: Dari Color ke Image
     Image getBackgroundImage(); 
     
-    // Method gambar aset lain
     default Image getPlayerImage() {
         return new ImageIcon("src/assets/images/alien.png").getImage();
     }
@@ -20,5 +17,10 @@ public interface GameTheme {
     
     default Image getObstacleImage() {
         return new ImageIcon("src/assets/images/rock.png").getImage();
+    }
+
+    // --- TAMBAHAN BARU ---
+    default Image getExplosionImage() {
+        return new ImageIcon("src/assets/images/explosion.png").getImage();
     }
 }

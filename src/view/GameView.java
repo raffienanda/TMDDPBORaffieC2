@@ -97,6 +97,9 @@ public class GameView extends JFrame {
                         case "OBSTACLE":
                             img = theme.getObstacleImage();
                             break;
+                        case "EXPLOSION":
+                            img = theme.getExplosionImage();
+                            break;
                         default:
                             // Objek tanpa gambar (misal peluru)
                             g.setColor(obj.getColor());
