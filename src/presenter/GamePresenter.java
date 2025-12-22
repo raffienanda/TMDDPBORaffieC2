@@ -22,20 +22,19 @@ public class GamePresenter implements Runnable, KeyListener {
     private Thread gameThread;
     private boolean isRunning = true;
 
-    // Objek Game
-    private GameObject player;
-    private List<GameObject> aliens = new ArrayList<>();
+    // --- OBJEK GAME (UPDATE PENAMAAN) ---
+    private GameObject player; // Player = Alien
+    private List<GameObject> humans = new ArrayList<>(); // Bot = Manusia
     private List<GameObject> bullets = new ArrayList<>();
     private List<GameObject> obstacles = new ArrayList<>();
     
-    // --- TAMBAHAN BARU: Variabel Ledakan ---
-    private boolean isExploding = false; // Status apakah sedang meledak
-    private int explosionTimer = 0;      // Timer durasi ledakan
-    private GameObject explosionObj;     // Objek visual ledakan
-    // ---------------------------------------
+    // Variabel Ledakan
+    private boolean isExploding = false; 
+    private int explosionTimer = 0;      
+    private GameObject explosionObj;     
     
     private boolean up, down, left, right;
-    private int spawnTimer = 0;
+    private int spawnTimer = 0;      
     private Random random = new Random();
 
     public GamePresenter(String username, GameTheme theme, TBenefitModel dbModel) {
@@ -43,15 +42,17 @@ public class GamePresenter implements Runnable, KeyListener {
         this.view = new GameView(theme);
         this.view.addInputListener(this);
 
-        // Setup Player
+        // 1. Setup Player (Alien)
         player = new GameObject(487, 290, 40, 40, Color.BLUE, "PLAYER");
 
+        // 2. Setup Data Pemain
         if (dbModel.isUsernameExist(username)) {
             this.playerStats = new TBenefit(username, 0, 0, 0); 
         } else {
             this.playerStats = new TBenefit(username, 0, 0, 0);
         }
 
+        // 3. Generate Batu
         generateObstacles();
 
         this.view.setVisible(true);
@@ -104,44 +105,48 @@ public class GamePresenter implements Runnable, KeyListener {
     }
 
     private void update() {
-        // --- TAMBAHAN BARU: LOGIKA SAAT MELEDAK ---
         if (isExploding) {
             explosionTimer++;
-            // Tunggu sekitar 60 frame (1 detik) sebelum Game Over beneran
             if (explosionTimer > 60) {
-                finishGame(); // Panggil method baru untuk menutup game
+                finishGame(); 
             }
-            return; // STOP UPDATE LAINNYA (Player gak bisa gerak, musuh diem)
+            return; 
         }
-        // ------------------------------------------
 
-        // 1. Gerakan Player
+        // 1. Gerakan Player (Alien)
         int speed = 5;
         if (up && player.getY() > 0) player.setY(player.getY() - speed);
         if (down && player.getY() < 700) player.setY(player.getY() + speed);
         if (left && player.getX() > 0) player.setX(player.getX() - speed);
         if (right && player.getX() < 970) player.setX(player.getX() + speed);
 
-        // 2. Spawn Alien
+        // 2. Spawn Manusia (Bot) dari Bawah
         spawnTimer++;
         if (spawnTimer > 100) { 
-            int ax = random.nextInt(950);
-            aliens.add(new GameObject(ax, 768, 40, 40, Color.RED, "HUMAN"));
+            int hx = random.nextInt(950);
+            humans.add(new GameObject(hx, 768, 40, 40, Color.RED, "HUMAN"));
             spawnTimer = 0;
         }
 
-        // 3. Gerakan Alien
-        for (GameObject alien : aliens) {
-            alien.setY(alien.getY() - 1); 
+        // 3. Gerakan Manusia (Zig-Zag)
+        for (GameObject human : humans) {
+            human.setY(human.getY() - 1); // Jalan ke atas
+            
+            // Logika Zig-Zag
+            int zigzag = (int) (Math.sin(human.getY() * 0.05) * 3);
+            int newX = human.getX() + zigzag;
+            
+            if (newX > 0 && newX < 970) {
+                human.setX(newX);
+            }
+            
+            // Manusia Nembak
             if (random.nextInt(100) < 2) { 
-                shootBullet(alien, "ENEMY_BULLET");
+                shootBullet(human, "ENEMY_BULLET");
             }
         }
 
-        // 4. Update Peluru
         updateBullets();
-        
-        // 5. Cek Tabrakan
         checkCollisions();
     }
 
@@ -154,7 +159,6 @@ public class GamePresenter implements Runnable, KeyListener {
     }
     
     private void playerShoot() {
-        // Cek isExploding biar mayat gak bisa nembak
         if (playerStats.getSisaPeluru() > 0 && !isExploding) {
             shootBullet(player, "PLAYER_BULLET");
             playerStats.setSisaPeluru(playerStats.getSisaPeluru() - 1);
@@ -173,6 +177,7 @@ public class GamePresenter implements Runnable, KeyListener {
 
             if (b.getY() < 0 || b.getY() > 768) {
                 if (b.getType().equals("ENEMY_BULLET")) {
+                    // Jika peluru musuh (Manusia) keluar layar, Player dapat bonus
                     playerStats.setPeluruMeleset(playerStats.getPeluruMeleset() + 1);
                     playerStats.setSisaPeluru(playerStats.getSisaPeluru() + 1);
                 }
@@ -195,24 +200,22 @@ public class GamePresenter implements Runnable, KeyListener {
                 }
             }
 
-            // Cek Kena Player 
+            // Cek Peluru Manusia Kena Player (Alien)
             if (!hit && b.getType().equals("ENEMY_BULLET")) {
                 if (b.getBounds().intersects(player.getBounds())) {
-                    // --- UBAH DI SINI: JANGAN LANGSUNG GAMEOVER ---
                     triggerExplosion(); 
                     hit = true; 
-                    // ----------------------------------------------
                 }
             }
 
-            // Cek Kena Alien 
+            // Cek Peluru Player Kena Manusia
             if (!hit && b.getType().equals("PLAYER_BULLET")) {
-                Iterator<GameObject> itAlien = aliens.iterator();
-                while (itAlien.hasNext()) {
-                    GameObject a = itAlien.next();
-                    if (b.getBounds().intersects(a.getBounds())) {
+                Iterator<GameObject> itHuman = humans.iterator(); // Ganti nama iterator
+                while (itHuman.hasNext()) {
+                    GameObject human = itHuman.next(); // Ganti nama variabel
+                    if (b.getBounds().intersects(human.getBounds())) {
                         playerStats.setSkor(playerStats.getSkor() + 10);
-                        itAlien.remove(); 
+                        itHuman.remove(); // Manusia mati
                         hit = true;
                         break;
                     }
@@ -223,21 +226,15 @@ public class GamePresenter implements Runnable, KeyListener {
         }
     }
 
-    // --- METHOD BARU: MEMICU LEDAKAN ---
     private void triggerExplosion() {
         isExploding = true;
-        // Buat objek ledakan tepat di posisi player
-        // Ukuran 60x60 biar agak lebih gede dari player
         explosionObj = new GameObject(player.getX()-10, player.getY()-10, 60, 60, Color.ORANGE, "EXPLOSION");
-        
-        // Pindahkan player jauh keluar layar biar gak kelihatan
         player.setX(-1000); 
     }
 
-    // --- METHOD BARU: MENYELESAIKAN GAME (PISAH DARI GAMEOVER) ---
     private void finishGame() {
         isRunning = false;
-        JOptionPane.showMessageDialog(view, "GAME OVER!\nSkor: " + playerStats.getSkor());
+        JOptionPane.showMessageDialog(view, "GAME OVER!\nSkor Akhir: " + playerStats.getSkor());
         
         dbModel.updateOrInsert(playerStats);
         
@@ -251,7 +248,6 @@ public class GamePresenter implements Runnable, KeyListener {
     private void draw() {
         List<GameObject> allObjs = new ArrayList<>();
         
-        // Kalau belum meledak, gambar player. Kalau meledak, gambar ledakan.
         if (!isExploding) {
             allObjs.add(player);
         } else {
@@ -261,19 +257,17 @@ public class GamePresenter implements Runnable, KeyListener {
         }
         
         allObjs.addAll(obstacles);
-        allObjs.addAll(aliens);
+        allObjs.addAll(humans); // Add list humans
         allObjs.addAll(bullets);
         
         view.render(allObjs, playerStats.getSkor(), playerStats.getSisaPeluru(), playerStats.getPeluruMeleset());
     }
 
-    // Input Handling
     @Override
     public void keyTyped(KeyEvent e) {}
 
     @Override
     public void keyPressed(KeyEvent e) {
-        // Kalau lagi meledak, input dimatikan
         if (isExploding) return; 
 
         int code = e.getKeyCode();
@@ -287,7 +281,7 @@ public class GamePresenter implements Runnable, KeyListener {
         }
         
         if (code == KeyEvent.VK_SPACE) {
-             finishGame(); // Quit manual
+             finishGame(); 
         }
     }
 
