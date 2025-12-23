@@ -11,6 +11,7 @@ public interface IMenuView {
     // Untuk mengambil inputan user
     String getUsernameInput();
     GameTheme getSelectedTheme();
+    String getSelectedAvatar(); // <--- TAMBAHAN BARU
     
     // Untuk tombol
     void addPlayListener(java.awt.event.ActionListener listener);

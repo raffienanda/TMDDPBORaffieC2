@@ -7,7 +7,7 @@ import javax.swing.JOptionPane;
 import model.TBenefit;
 import model.TBenefitModel;
 import view.IMenuView;
-import view.StoryView; // <--- Jangan lupa import ini
+import view.StoryView;
 import theme.GameTheme;
 
 public class MenuPresenter {
@@ -18,7 +18,6 @@ public class MenuPresenter {
         this.view = view;
         this.model = model;
 
-        // Pasang Event Listener ke Tombol di View
         this.view.addPlayListener(new PlayAction());
         this.view.addQuitListener(new QuitAction());
 
@@ -31,34 +30,30 @@ public class MenuPresenter {
         view.setTableData(data);
     }
 
-    // --- CLASS LISTENER TOMBOL PLAY (DIMODIFIKASI) ---
     class PlayAction implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
             String username = view.getUsernameInput();
             GameTheme selectedTheme = view.getSelectedTheme();
+            String selectedAvatar = view.getSelectedAvatar(); // <--- Ambil Avatar
 
-            // Validasi Input
             if (username.isEmpty()) {
                 JOptionPane.showMessageDialog(null, "Username tidak boleh kosong!");
                 return;
             }
             
-            // 1. Tutup Menu Dulu
             view.close(); 
             
-            // 2. Siapkan Gambar Cerita
             String[] storyImages = {
                 "src/assets/images/Family_Scene.jpg",
                 "src/assets/images/HumanAttack_Scene.jpg",
                 "src/assets/images/AlienAttack_Scene.jpg"
             };
 
-            // 3. Buka Story View
             new StoryView(storyImages, () -> {
-                
                 System.out.println("Cerita selesai. Memulai Game untuk: " + username);
-                new GamePresenter(username, selectedTheme, model); 
+                // Oper avatar ke GamePresenter
+                new GamePresenter(username, selectedTheme, model, selectedAvatar); 
                 
             }).display();
         }
