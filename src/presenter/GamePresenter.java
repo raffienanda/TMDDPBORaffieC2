@@ -12,6 +12,7 @@ import model.GameObject;
 import model.TBenefit;
 import model.TBenefitModel;
 import theme.GameTheme;
+import util.AudioPlayer; // 1. Import AudioPlayer
 import view.GameView;
 import view.MenuView;
 
@@ -21,6 +22,7 @@ public class GamePresenter implements Runnable, KeyListener {
     private TBenefit playerStats;
     private Thread gameThread;
     private boolean isRunning = true;
+    private AudioPlayer audioPlayer; // 2. Variabel Audio
 
     private GameObject player;
     private List<GameObject> humans = new ArrayList<>(); 
@@ -35,9 +37,10 @@ public class GamePresenter implements Runnable, KeyListener {
     private int spawnTimer = 0;      
     private Random random = new Random();
 
-    // UPDATE CONSTRUCTOR: Terima avatarImgName
+    // Constructor tetap menerima avatarImgName
     public GamePresenter(String username, GameTheme theme, TBenefitModel dbModel, String avatarImgName) {
         this.dbModel = dbModel;
+        this.audioPlayer = new AudioPlayer(); // 3. Inisialisasi Audio
         
         // Oper avatar ke View
         this.view = new GameView(theme, avatarImgName);
@@ -56,6 +59,9 @@ public class GamePresenter implements Runnable, KeyListener {
         this.view.setVisible(true);
         gameThread = new Thread(this);
         gameThread.start();
+        
+        // 4. Mainkan Musik Game
+        audioPlayer.playMusic("src/assets/audio/game_bgm.wav");
     }
 
     private void generateObstacles() {
@@ -186,13 +192,10 @@ public class GamePresenter implements Runnable, KeyListener {
             // Cek Kena Batu
             for (GameObject rock : obstacles) {
                 if (b.getBounds().intersects(rock.getBounds())) {
-                    // --- MODIFIKASI DI SINI ---
-                    // Jika peluru musuh kena batu, tambah peluru ke player
+                    // Logic: Jika peluru musuh kena batu, tambah peluru ke player
                     if (b.getType().equals("ENEMY_BULLET")) {
                         playerStats.setSisaPeluru(playerStats.getSisaPeluru() + 1);
                     }
-                    // --------------------------
-                    
                     hit = true; 
                     break;
                 }
@@ -231,6 +234,9 @@ public class GamePresenter implements Runnable, KeyListener {
     }
 
     private void finishGame() {
+        // 5. Matikan Musik Game
+        audioPlayer.stopMusic();
+
         isRunning = false;
         JOptionPane.showMessageDialog(view, "GAME OVER!\nSkor Akhir: " + playerStats.getSkor());
         dbModel.updateOrInsert(playerStats);

@@ -17,13 +17,13 @@ public class MenuView extends JFrame implements IMenuView {
     private DefaultTableModel tableModel;
     private JTextField txtUsername;
     private JComboBox<GameTheme> comboTheme;
-    private JComboBox<String> comboAvatar; // <--- Variabel Baru
+    private JComboBox<String> comboAvatar; 
     private JButton btnPlay, btnQuit;
     private Image backgroundImage;
 
     public MenuView() {
         setTitle("Hide and Seek The Challenge");
-        setSize(500, 650); // Tinggi ditambah sedikit agar muat
+        setSize(500, 650); 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -50,9 +50,18 @@ public class MenuView extends JFrame implements IMenuView {
         lblTitle.setOutlineColor(Color.BLACK); 
         lblTitle.setOutlineThickness(3.0f);    
         
+        // --- (BARU) SUBTITLE ---
+        // Ganti tulisan ini sesuai keinginanmu
+        OutlineLabel lblSubtitle = new OutlineLabel("Revenge Of Imroatus"); 
+        lblSubtitle.setFont(new Font("SansSerif", Font.BOLD, 14)); 
+        lblSubtitle.setForeground(Color.WHITE); // Saya beri warna kuning agar kontras
+        lblSubtitle.setOutlineColor(Color.BLACK); 
+        lblSubtitle.setOutlineThickness(2.0f);
+
         JPanel titlePanel = new JPanel(new BorderLayout());
         titlePanel.setOpaque(false);
-        titlePanel.add(lblTitle, BorderLayout.CENTER);
+        titlePanel.add(lblTitle, BorderLayout.CENTER);  // Judul di Tengah
+        titlePanel.add(lblSubtitle, BorderLayout.SOUTH); // Subtitle di Bawahnya
         titlePanel.setBorder(BorderFactory.createEmptyBorder(25, 0, 10, 0));
         add(titlePanel, BorderLayout.NORTH);
 
@@ -102,7 +111,7 @@ public class MenuView extends JFrame implements IMenuView {
         themePanel.add(comboTheme);
         centerPanel.add(themePanel);
 
-        // 3. Pilihan Avatar (UFO) --- BARU ---
+        // 3. Pilihan Avatar (UFO)
         JPanel avatarPanel = new JPanel(new FlowLayout());
         avatarPanel.setOpaque(false);
 
@@ -117,7 +126,6 @@ public class MenuView extends JFrame implements IMenuView {
         comboAvatar = new JComboBox<>(avatars);
         avatarPanel.add(comboAvatar);
         centerPanel.add(avatarPanel);
-        // ------------------------------------
 
         // --- TABEL CUSTOM ---
         String[] columns = {"Username", "Skor", "Meleset", "Sisa Peluru"};
@@ -220,13 +228,12 @@ public class MenuView extends JFrame implements IMenuView {
         return (GameTheme) comboTheme.getSelectedItem();
     }
 
-    // --- IMPLEMENTASI BARU: Mendapatkan file gambar dari pilihan ---
     @Override
     public String getSelectedAvatar() {
         String choice = (String) comboAvatar.getSelectedItem();
         if ("Merah".equals(choice)) return "alien_red.png";
         if ("Hijau".equals(choice)) return "alien_green.png";
-        return "alien.png"; // Default Biru
+        return "alien.png"; 
     }
 
     @Override
@@ -250,7 +257,7 @@ public class MenuView extends JFrame implements IMenuView {
     }
 }
 
-// CLASS HELPER LABEL OUTLINE
+// CLASS HELPER LABEL OUTLINE (TIDAK BERUBAH)
 class OutlineLabel extends JLabel {
     private Color outlineColor = Color.BLACK;
     private float strokeThickness = 3f;
