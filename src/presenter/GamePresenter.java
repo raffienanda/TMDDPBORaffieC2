@@ -183,13 +183,22 @@ public class GamePresenter implements Runnable, KeyListener {
             GameObject b = itBullet.next();
             boolean hit = false;
 
+            // Cek Kena Batu
             for (GameObject rock : obstacles) {
                 if (b.getBounds().intersects(rock.getBounds())) {
+                    // --- MODIFIKASI DI SINI ---
+                    // Jika peluru musuh kena batu, tambah peluru ke player
+                    if (b.getType().equals("ENEMY_BULLET")) {
+                        playerStats.setSisaPeluru(playerStats.getSisaPeluru() + 1);
+                    }
+                    // --------------------------
+                    
                     hit = true; 
                     break;
                 }
             }
 
+            // Cek Peluru Manusia Kena Player (Alien)
             if (!hit && b.getType().equals("ENEMY_BULLET")) {
                 if (b.getBounds().intersects(player.getBounds())) {
                     triggerExplosion(); 
@@ -197,13 +206,14 @@ public class GamePresenter implements Runnable, KeyListener {
                 }
             }
 
+            // Cek Peluru Player Kena Manusia
             if (!hit && b.getType().equals("PLAYER_BULLET")) {
                 Iterator<GameObject> itHuman = humans.iterator(); 
                 while (itHuman.hasNext()) {
                     GameObject human = itHuman.next(); 
                     if (b.getBounds().intersects(human.getBounds())) {
                         playerStats.setSkor(playerStats.getSkor() + 10);
-                        itHuman.remove(); 
+                        itHuman.remove(); // Manusia mati
                         hit = true;
                         break;
                     }
