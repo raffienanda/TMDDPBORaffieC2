@@ -61,7 +61,7 @@ public class GamePresenter implements Runnable, KeyListener {
         gameThread.start();
         
         // 4. Mainkan Musik Game
-        audioPlayer.playMusic("src/assets/audio/game_bgm.wav");
+        audioPlayer.playMusic("src/assets/sounds/game_bgm.wav");
     }
 
     private void generateObstacles() {

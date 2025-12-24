@@ -40,7 +40,7 @@ public class StoryView extends JFrame {
         showImage();
         
         // 4. Mainkan Musik Story
-        audioPlayer.playMusic("src/assets/audio/story_bgm.wav");
+        audioPlayer.playMusic("src/assets/sounds/story_bgm.wav");
     }
     
     private void showImage() {
