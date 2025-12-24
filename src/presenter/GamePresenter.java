@@ -12,7 +12,7 @@ import model.GameObject;
 import model.TBenefit;
 import model.TBenefitModel;
 import theme.GameTheme;
-import util.AudioPlayer; // 1. Import AudioPlayer
+import util.AudioPlayer; 
 import view.GameView;
 import view.MenuView;
 
@@ -22,7 +22,7 @@ public class GamePresenter implements Runnable, KeyListener {
     private TBenefit playerStats;
     private Thread gameThread;
     private boolean isRunning = true;
-    private AudioPlayer audioPlayer; // 2. Variabel Audio
+    private AudioPlayer audioPlayer; 
 
     private GameObject player;
     private List<GameObject> humans = new ArrayList<>(); 
@@ -37,12 +37,10 @@ public class GamePresenter implements Runnable, KeyListener {
     private int spawnTimer = 0;      
     private Random random = new Random();
 
-    // Constructor tetap menerima avatarImgName
     public GamePresenter(String username, GameTheme theme, TBenefitModel dbModel, String avatarImgName) {
         this.dbModel = dbModel;
-        this.audioPlayer = new AudioPlayer(); // 3. Inisialisasi Audio
+        this.audioPlayer = new AudioPlayer(); 
         
-        // Oper avatar ke View
         this.view = new GameView(theme, avatarImgName);
         this.view.addInputListener(this);
 
@@ -60,19 +58,23 @@ public class GamePresenter implements Runnable, KeyListener {
         gameThread = new Thread(this);
         gameThread.start();
         
-        // 4. Mainkan Musik Game
-        audioPlayer.playMusic("src/assets/sounds/game_bgm.wav");
+        audioPlayer.playMusic("src/assets/audio/game_bgm.wav");
     }
+
+    // --- METHOD BARU: TERIMA SETTINGAN VOLUME ---
+    public void setVolumes(float bgmVol, float sfxVol) {
+        this.audioPlayer.setBgmVolume(bgmVol);
+        this.audioPlayer.setSfxVolume(sfxVol);
+    }
+    // --------------------------------------------
 
     private void generateObstacles() {
         obstacles.clear(); 
         int count = 5 + random.nextInt(4); 
         int attempts = 0; 
-        
         while (obstacles.size() < count && attempts < 100) {
             int ox = random.nextInt(900);
             int oy = random.nextInt(500); 
-            
             boolean safeFromPlayer = Math.abs(ox - player.getX()) > 60 || Math.abs(oy - player.getY()) > 60;
             boolean safeFromRocks = true;
             for (GameObject existingRock : obstacles) {
@@ -81,7 +83,6 @@ public class GamePresenter implements Runnable, KeyListener {
                     break;
                 }
             }
-            
             if (safeFromPlayer && safeFromRocks) {
                 obstacles.add(new GameObject(ox, oy, 50, 50, Color.GRAY, "OBSTACLE"));
             }
@@ -134,10 +135,7 @@ public class GamePresenter implements Runnable, KeyListener {
             human.setY(human.getY() - 1); 
             int zigzag = (int) (Math.sin(human.getY() * 0.05) * 3);
             int newX = human.getX() + zigzag;
-            
-            if (newX > 0 && newX < 970) {
-                human.setX(newX);
-            }
+            if (newX > 0 && newX < 970) human.setX(newX);
             
             if (random.nextInt(100) < 2) { 
                 shootBullet(human, "ENEMY_BULLET");
@@ -160,6 +158,9 @@ public class GamePresenter implements Runnable, KeyListener {
         if (playerStats.getSisaPeluru() > 0 && !isExploding) {
             shootBullet(player, "PLAYER_BULLET");
             playerStats.setSisaPeluru(playerStats.getSisaPeluru() - 1);
+            
+            // SFX TEMBAK
+            audioPlayer.playSoundEffect("src/assets/audio/shoot.wav");
         } 
     }
 
@@ -189,10 +190,8 @@ public class GamePresenter implements Runnable, KeyListener {
             GameObject b = itBullet.next();
             boolean hit = false;
 
-            // Cek Kena Batu
             for (GameObject rock : obstacles) {
                 if (b.getBounds().intersects(rock.getBounds())) {
-                    // Logic: Jika peluru musuh kena batu, tambah peluru ke player
                     if (b.getType().equals("ENEMY_BULLET")) {
                         playerStats.setSisaPeluru(playerStats.getSisaPeluru() + 1);
                     }
@@ -201,7 +200,6 @@ public class GamePresenter implements Runnable, KeyListener {
                 }
             }
 
-            // Cek Peluru Manusia Kena Player (Alien)
             if (!hit && b.getType().equals("ENEMY_BULLET")) {
                 if (b.getBounds().intersects(player.getBounds())) {
                     triggerExplosion(); 
@@ -209,14 +207,13 @@ public class GamePresenter implements Runnable, KeyListener {
                 }
             }
 
-            // Cek Peluru Player Kena Manusia
             if (!hit && b.getType().equals("PLAYER_BULLET")) {
                 Iterator<GameObject> itHuman = humans.iterator(); 
                 while (itHuman.hasNext()) {
                     GameObject human = itHuman.next(); 
                     if (b.getBounds().intersects(human.getBounds())) {
                         playerStats.setSkor(playerStats.getSkor() + 10);
-                        itHuman.remove(); // Manusia mati
+                        itHuman.remove();
                         hit = true;
                         break;
                     }
@@ -231,12 +228,13 @@ public class GamePresenter implements Runnable, KeyListener {
         isExploding = true;
         explosionObj = new GameObject(player.getX()-10, player.getY()-10, 60, 60, Color.ORANGE, "EXPLOSION");
         player.setX(-1000); 
+        
+        // SFX LEDAKAN
+        audioPlayer.playSoundEffect("src/assets/audio/explosion.wav");
     }
 
     private void finishGame() {
-        // 5. Matikan Musik Game
         audioPlayer.stopMusic();
-
         isRunning = false;
         JOptionPane.showMessageDialog(view, "GAME OVER!\nSkor Akhir: " + playerStats.getSkor());
         dbModel.updateOrInsert(playerStats);
@@ -248,24 +246,16 @@ public class GamePresenter implements Runnable, KeyListener {
 
     private void draw() {
         List<GameObject> allObjs = new ArrayList<>();
-        
-        if (!isExploding) {
-            allObjs.add(player);
-        } else {
-            if (explosionObj != null) {
-                allObjs.add(explosionObj);
-            }
-        }
+        if (!isExploding) allObjs.add(player);
+        else if (explosionObj != null) allObjs.add(explosionObj);
         
         allObjs.addAll(obstacles);
         allObjs.addAll(humans); 
         allObjs.addAll(bullets);
-        
         view.render(allObjs, playerStats.getSkor(), playerStats.getSisaPeluru(), playerStats.getPeluruMeleset());
     }
 
-    @Override
-    public void keyTyped(KeyEvent e) {}
+    @Override public void keyTyped(KeyEvent e) {}
 
     @Override
     public void keyPressed(KeyEvent e) {

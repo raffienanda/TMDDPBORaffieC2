@@ -2,7 +2,7 @@ package view;
 
 import javax.swing.*;
 import java.awt.*;
-import util.AudioPlayer; // 1. Import AudioPlayer
+import util.AudioPlayer;
 
 public class StoryView extends JFrame {
     private JLabel lblImage;
@@ -11,12 +11,13 @@ public class StoryView extends JFrame {
     private int currentIndex = 0;
     
     private Runnable onFinishAction;
-    private AudioPlayer audioPlayer; // 2. Variabel Audio
+    private AudioPlayer audioPlayer;
 
-    public StoryView(String[] images, Runnable onFinish) {
+    // UBAH Constructor: Terima String audioPath (bukan String[])
+    public StoryView(String[] images, String audioPath, Runnable onFinish) {
         this.imagePaths = images;
         this.onFinishAction = onFinish;
-        this.audioPlayer = new AudioPlayer(); // 3. Inisialisasi
+        this.audioPlayer = new AudioPlayer();
         
         setTitle("Prologue - The Alien's Journey");
         setSize(1024, 768); 
@@ -39,8 +40,10 @@ public class StoryView extends JFrame {
         
         showImage();
         
-        // 4. Mainkan Musik Story
-        audioPlayer.playMusic("src/assets/sounds/story_bgm.wav");
+        // Mainkan musik SATU KALI saja di awal
+        if (audioPath != null) {
+            audioPlayer.playMusic(audioPath);
+        }
     }
     
     private void showImage() {
@@ -49,6 +52,8 @@ public class StoryView extends JFrame {
             Image img = icon.getImage();
             Image scaledImg = img.getScaledInstance(1024, 768, Image.SCALE_SMOOTH);
             lblImage.setIcon(new ImageIcon(scaledImg));
+            
+            // HAPUS logika playMusic di sini agar lagu tidak ter-reset
         }
     }
     
@@ -56,7 +61,7 @@ public class StoryView extends JFrame {
         currentIndex++;
         
         if (currentIndex >= imagePaths.length) {
-            // 5. Matikan Musik Story
+            // Matikan musik saat cerita selesai
             audioPlayer.stopMusic();
             
             this.dispose();
