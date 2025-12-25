@@ -16,7 +16,12 @@ import util.AudioPlayer;
 import view.GameView;
 import view.MenuView;
 
+/**
+ * GamePresenter: Mengatur seluruh logika permainan.
+ * UPDATE: Menambahkan logika collision agar batu tidak bisa dilewati.
+ */
 public class GamePresenter implements Runnable, KeyListener {
+    // ... (Variabel lain tetap sama, tidak berubah) ...
     private GameView view;
     private TBenefitModel dbModel;
     private TBenefit playerStats;
@@ -38,6 +43,7 @@ public class GamePresenter implements Runnable, KeyListener {
     private Random random = new Random();
 
     public GamePresenter(String username, GameTheme theme, TBenefitModel dbModel, String avatarImgName) {
+        // ... (Constructor tetap sama) ...
         this.dbModel = dbModel;
         this.audioPlayer = new AudioPlayer(); 
         
@@ -61,14 +67,13 @@ public class GamePresenter implements Runnable, KeyListener {
         audioPlayer.playMusic("src/assets/audio/game_bgm.wav");
     }
 
-    // --- METHOD BARU: TERIMA SETTINGAN VOLUME ---
     public void setVolumes(float bgmVol, float sfxVol) {
         this.audioPlayer.setBgmVolume(bgmVol);
         this.audioPlayer.setSfxVolume(sfxVol);
     }
-    // --------------------------------------------
 
     private void generateObstacles() {
+        // ... (Generate obstacles tetap sama) ...
         obstacles.clear(); 
         int count = 5 + random.nextInt(4); 
         int attempts = 0; 
@@ -92,6 +97,7 @@ public class GamePresenter implements Runnable, KeyListener {
 
     @Override
     public void run() {
+        // ... (Game Loop tetap sama) ...
         double drawInterval = 1000000000 / 60;
         double delta = 0;
         long lastTime = System.nanoTime();
@@ -109,6 +115,19 @@ public class GamePresenter implements Runnable, KeyListener {
         }
     }
 
+    /**
+     * Helper Method: Cek apakah player menabrak salah satu batu?
+     */
+    private boolean checkPlayerHitRock() {
+        for (GameObject rock : obstacles) {
+            // Gunakan method bawaan intersects dari class Rectangle
+            if (player.getBounds().intersects(rock.getBounds())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void update() {
         if (isExploding) {
             explosionTimer++;
@@ -119,11 +138,36 @@ public class GamePresenter implements Runnable, KeyListener {
         }
 
         int speed = 5;
-        if (up && player.getY() > 0) player.setY(player.getY() - speed);
-        if (down && player.getY() < 700) player.setY(player.getY() + speed);
-        if (left && player.getX() > 0) player.setX(player.getX() - speed);
-        if (right && player.getX() < 970) player.setX(player.getX() + speed);
 
+        // --- UPDATE LOGIKA GERAK (Sumbu Y) ---
+        if (up && player.getY() > 0) {
+            player.setY(player.getY() - speed);       // Coba gerak
+            if (checkPlayerHitRock()) {               // Kalau nabrak batu...
+                player.setY(player.getY() + speed);   // Batalkan (kembalikan posisi)
+            }
+        }
+        if (down && player.getY() < 700) {
+            player.setY(player.getY() + speed);       // Coba gerak
+            if (checkPlayerHitRock()) {               // Kalau nabrak batu...
+                player.setY(player.getY() - speed);   // Batalkan
+            }
+        }
+
+        // --- UPDATE LOGIKA GERAK (Sumbu X) ---
+        if (left && player.getX() > 0) {
+            player.setX(player.getX() - speed);       // Coba gerak
+            if (checkPlayerHitRock()) {               // Kalau nabrak batu...
+                player.setX(player.getX() + speed);   // Batalkan
+            }
+        }
+        if (right && player.getX() < 970) {
+            player.setX(player.getX() + speed);       // Coba gerak
+            if (checkPlayerHitRock()) {               // Kalau nabrak batu...
+                player.setX(player.getX() - speed);   // Batalkan
+            }
+        }
+
+        // --- Logika Spawning dan Musuh (Tetap sama) ---
         spawnTimer++;
         if (spawnTimer > 100) { 
             int hx = random.nextInt(950);
@@ -146,6 +190,8 @@ public class GamePresenter implements Runnable, KeyListener {
         checkCollisions();
     }
 
+    // ... (Sisa method ke bawah: shootBullet, playerShoot, updateBullets, checkCollisions, dll TETAP SAMA) ...
+
     private void shootBullet(GameObject shooter, String type) {
         int bx = shooter.getX() + shooter.getWidth() / 2;
         int by = shooter.getY();
@@ -158,8 +204,6 @@ public class GamePresenter implements Runnable, KeyListener {
         if (playerStats.getSisaPeluru() > 0 && !isExploding) {
             shootBullet(player, "PLAYER_BULLET");
             playerStats.setSisaPeluru(playerStats.getSisaPeluru() - 1);
-            
-            // SFX TEMBAK
             audioPlayer.playSoundEffect("src/assets/audio/shoot.wav");
         } 
     }
@@ -228,8 +272,6 @@ public class GamePresenter implements Runnable, KeyListener {
         isExploding = true;
         explosionObj = new GameObject(player.getX()-10, player.getY()-10, 60, 60, Color.ORANGE, "EXPLOSION");
         player.setX(-1000); 
-        
-        // SFX LEDAKAN
         audioPlayer.playSoundEffect("src/assets/audio/explosion.wav");
     }
 

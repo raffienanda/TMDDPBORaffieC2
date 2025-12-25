@@ -3,6 +3,10 @@ package model;
 import java.awt.Color;
 import java.awt.Rectangle;
 
+/**
+ * GameObject: Kelas dasar untuk semua objek di dalam game.
+ * (Player, Musuh, Peluru, Batu, dll semua adalah GameObject)
+ */
 public class GameObject {
     private int x, y;
     private int width, height;
@@ -19,6 +23,8 @@ public class GameObject {
     }
 
     // Untuk deteksi tabrakan (Collision Detection)
+    // Mengembalikan kotak (Rectangle) sesuai posisi dan ukuran objek.
+    // Kotak ini nanti dipakai untuk cek .intersects() dengan objek lain.
     public Rectangle getBounds() {
         return new Rectangle(x, y, width, height);
     }
