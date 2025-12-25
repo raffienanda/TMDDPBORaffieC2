@@ -18,69 +18,94 @@ import view.MenuView;
 
 /**
  * GamePresenter: Mengatur seluruh logika permainan.
- * UPDATE: Menambahkan logika collision agar batu tidak bisa dilewati.
+ * Bertanggung jawab atas Game Loop, fisika, input player, dan aturan main.
+ * Mengimplementasikan:
+ * - Runnable: Agar bisa berjalan di Thread terpisah (untuk animasi game).
+ * - KeyListener: Agar bisa mendeteksi input keyboard (WASD/Panah/Spasi).
  */
 public class GamePresenter implements Runnable, KeyListener {
-    // ... (Variabel lain tetap sama, tidak berubah) ...
-    private GameView view;
-    private TBenefitModel dbModel;
-    private TBenefit playerStats;
-    private Thread gameThread;
-    private boolean isRunning = true;
-    private AudioPlayer audioPlayer; 
-
-    private GameObject player;
-    private List<GameObject> humans = new ArrayList<>(); 
-    private List<GameObject> bullets = new ArrayList<>();
-    private List<GameObject> obstacles = new ArrayList<>();
+    // --- KOMPONEN MVP & DATA ---
+    private GameView view;          // Tampilan game
+    private TBenefitModel dbModel;  // Koneksi database
+    private TBenefit playerStats;   // Data skor, peluru, dan status player
     
+    // --- THREADING & AUDIO ---
+    private Thread gameThread;      // Thread utama game loop
+    private boolean isRunning = true; // Flag untuk menghentikan game
+    private AudioPlayer audioPlayer;  // Pengatur musik & efek suara
+
+    // --- OBJEK GAME (ENTITIES) ---
+    private GameObject player;
+    private List<GameObject> humans = new ArrayList<>();   // Daftar musuh/bot
+    private List<GameObject> bullets = new ArrayList<>();  // Daftar peluru (player & musuh)
+    private List<GameObject> obstacles = new ArrayList<>(); // Daftar batu/rintangan
+    
+    // --- VAR ANIMASI LEDAKAN ---
     private boolean isExploding = false; 
     private int explosionTimer = 0;      
     private GameObject explosionObj;     
     
-    private boolean up, down, left, right;
-    private int spawnTimer = 0;      
+    // --- INPUT CONTROLS ---
+    private boolean up, down, left, right; // Status tombol keyboard
+    
+    // --- LOGIC UTILITY ---
+    private int spawnTimer = 0;      // Timer untuk memunculkan musuh
     private Random random = new Random();
 
+    /**
+     * CONSTRUCTOR: Inisialisasi awal permainan.
+     */
     public GamePresenter(String username, GameTheme theme, TBenefitModel dbModel, String avatarImgName) {
-        // ... (Constructor tetap sama) ...
         this.dbModel = dbModel;
         this.audioPlayer = new AudioPlayer(); 
         
+        // 1. Siapkan View & Listener Input
         this.view = new GameView(theme, avatarImgName);
         this.view.addInputListener(this);
 
+        // 2. Buat Objek Player di posisi awal
         player = new GameObject(487, 290, 40, 40, Color.BLUE, "PLAYER");
 
+        // 3. Cek User di Database (Load data atau Buat baru)
         if (dbModel.isUsernameExist(username)) {
             this.playerStats = new TBenefit(username, 0, 0, 0); 
         } else {
             this.playerStats = new TBenefit(username, 0, 0, 0);
         }
 
+        // 4. Generate Rintangan Batu
         generateObstacles();
 
+        // 5. Mulai Game Loop
         this.view.setVisible(true);
         gameThread = new Thread(this);
         gameThread.start();
         
+        // 6. Putar Musik Background
         audioPlayer.playMusic("src/assets/audio/game_bgm.wav");
     }
 
+    // Mengatur volume BGM dan SFX (dipanggil dari Setting Menu sebelumnya)
     public void setVolumes(float bgmVol, float sfxVol) {
         this.audioPlayer.setBgmVolume(bgmVol);
         this.audioPlayer.setSfxVolume(sfxVol);
     }
 
+    /**
+     * Membuat rintangan batu secara acak di posisi aman.
+     */
     private void generateObstacles() {
-        // ... (Generate obstacles tetap sama) ...
         obstacles.clear(); 
-        int count = 5 + random.nextInt(4); 
+        int count = 5 + random.nextInt(4); // Random jumlah batu (5-8)
         int attempts = 0; 
+        
         while (obstacles.size() < count && attempts < 100) {
             int ox = random.nextInt(900);
             int oy = random.nextInt(500); 
+            
+            // Cek jarak aman agar tidak menimpa player
             boolean safeFromPlayer = Math.abs(ox - player.getX()) > 60 || Math.abs(oy - player.getY()) > 60;
+            // Cek agar tidak menumpuk dengan batu lain
             boolean safeFromRocks = true;
             for (GameObject existingRock : obstacles) {
                 if (Math.abs(ox - existingRock.getX()) < 60 && Math.abs(oy - existingRock.getY()) < 60) {
@@ -88,6 +113,7 @@ public class GamePresenter implements Runnable, KeyListener {
                     break;
                 }
             }
+            // Jika aman, tambahkan ke list
             if (safeFromPlayer && safeFromRocks) {
                 obstacles.add(new GameObject(ox, oy, 50, 50, Color.GRAY, "OBSTACLE"));
             }
@@ -95,10 +121,12 @@ public class GamePresenter implements Runnable, KeyListener {
         }
     }
 
+    /**
+     * GAME LOOP: Inti dari jalannya game (60 FPS).
+     */
     @Override
     public void run() {
-        // ... (Game Loop tetap sama) ...
-        double drawInterval = 1000000000 / 60;
+        double drawInterval = 1000000000 / 60; // Target 60 FPS
         double delta = 0;
         long lastTime = System.nanoTime();
 
@@ -108,19 +136,19 @@ public class GamePresenter implements Runnable, KeyListener {
             lastTime = currentTime;
 
             if (delta >= 1) {
-                update();
-                draw();
+                update(); // 1. Hitung Logika (Posisi, Tabrakan, dll)
+                draw();   // 2. Gambar Ulang Layar
                 delta--;
             }
         }
     }
 
     /**
-     * Helper Method: Cek apakah player menabrak salah satu batu?
+     * Helper Method: Cek apakah kotak player bersinggungan dengan kotak batu.
      */
     private boolean checkPlayerHitRock() {
         for (GameObject rock : obstacles) {
-            // Gunakan method bawaan intersects dari class Rectangle
+            // Menggunakan method bawaan Rectangle.intersects()
             if (player.getBounds().intersects(rock.getBounds())) {
                 return true;
             }
@@ -128,70 +156,83 @@ public class GamePresenter implements Runnable, KeyListener {
         return false;
     }
 
+    /**
+     * UPDATE: Menghitung semua perubahan logika per-frame.
+     */
     private void update() {
+        // --- A. JIKA SEDANG LEDAKAN (GAME OVER SEQUENCE) ---
         if (isExploding) {
             explosionTimer++;
+            // Tunggu 60 frame (1 detik) sebelum muncul popup game over
             if (explosionTimer > 60) {
                 finishGame(); 
             }
-            return; 
+            return; // Skip logika lain
         }
 
         int speed = 5;
 
-        // --- UPDATE LOGIKA GERAK (Sumbu Y) ---
+        // --- B. LOGIKA PERGERAKAN PLAYER + TABRAKAN BATU ---
+        
+        // Gerak Atas/Bawah (Sumbu Y)
         if (up && player.getY() > 0) {
             player.setY(player.getY() - speed);       // Coba gerak
-            if (checkPlayerHitRock()) {               // Kalau nabrak batu...
-                player.setY(player.getY() + speed);   // Batalkan (kembalikan posisi)
+            if (checkPlayerHitRock()) {               // Cek nabrak batu?
+                player.setY(player.getY() + speed);   // Ya: Batalkan gerak
             }
         }
         if (down && player.getY() < 700) {
             player.setY(player.getY() + speed);       // Coba gerak
-            if (checkPlayerHitRock()) {               // Kalau nabrak batu...
-                player.setY(player.getY() - speed);   // Batalkan
+            if (checkPlayerHitRock()) {               // Cek nabrak batu?
+                player.setY(player.getY() - speed);   // Ya: Batalkan gerak
             }
         }
 
-        // --- UPDATE LOGIKA GERAK (Sumbu X) ---
+        // Gerak Kiri/Kanan (Sumbu X)
         if (left && player.getX() > 0) {
             player.setX(player.getX() - speed);       // Coba gerak
-            if (checkPlayerHitRock()) {               // Kalau nabrak batu...
-                player.setX(player.getX() + speed);   // Batalkan
+            if (checkPlayerHitRock()) {               // Cek nabrak batu?
+                player.setX(player.getX() + speed);   // Ya: Batalkan gerak
             }
         }
         if (right && player.getX() < 970) {
             player.setX(player.getX() + speed);       // Coba gerak
-            if (checkPlayerHitRock()) {               // Kalau nabrak batu...
-                player.setX(player.getX() - speed);   // Batalkan
+            if (checkPlayerHitRock()) {               // Cek nabrak batu?
+                player.setX(player.getX() - speed);   // Ya: Batalkan gerak
             }
         }
 
-        // --- Logika Spawning dan Musuh (Tetap sama) ---
+        // --- C. SPAWN MUSUH (BOT) ---
         spawnTimer++;
-        if (spawnTimer > 100) { 
+        if (spawnTimer > 100) { // Setiap ~1.5 detik
             int hx = random.nextInt(950);
             humans.add(new GameObject(hx, 768, 40, 40, Color.RED, "HUMAN"));
             spawnTimer = 0;
         }
 
+        // --- D. UPDATE GERAKAN MUSUH ---
         for (GameObject human : humans) {
-            human.setY(human.getY() - 1); 
+            human.setY(human.getY() - 1); // Jalan ke atas
+            
+            // Gerak Zig-zag (Sinus)
             int zigzag = (int) (Math.sin(human.getY() * 0.05) * 3);
             int newX = human.getX() + zigzag;
             if (newX > 0 && newX < 970) human.setX(newX);
             
+            // Musuh Nembak Random (Peluang 2%)
             if (random.nextInt(100) < 2) { 
                 shootBullet(human, "ENEMY_BULLET");
             }
         }
 
+        // --- E. UPDATE PELURU & TABRAKAN ---
         updateBullets();
         checkCollisions();
     }
 
-    // ... (Sisa method ke bawah: shootBullet, playerShoot, updateBullets, checkCollisions, dll TETAP SAMA) ...
-
+    /**
+     * Membuat objek peluru baru.
+     */
     private void shootBullet(GameObject shooter, String type) {
         int bx = shooter.getX() + shooter.getWidth() / 2;
         int by = shooter.getY();
@@ -200,25 +241,34 @@ public class GamePresenter implements Runnable, KeyListener {
         bullets.add(bullet);
     }
     
+    /**
+     * Logika menembak player (dipanggil saat tombol Z ditekan).
+     */
     private void playerShoot() {
         if (playerStats.getSisaPeluru() > 0 && !isExploding) {
             shootBullet(player, "PLAYER_BULLET");
-            playerStats.setSisaPeluru(playerStats.getSisaPeluru() - 1);
-            audioPlayer.playSoundEffect("src/assets/audio/shoot.wav");
+            playerStats.setSisaPeluru(playerStats.getSisaPeluru() - 1); // Kurangi stok peluru
+            audioPlayer.playSoundEffect("src/assets/audio/shoot.wav"); // Mainkan SFX
         } 
     }
 
+    /**
+     * Mengupdate posisi peluru dan menghapusnya jika keluar layar.
+     */
     private void updateBullets() {
         Iterator<GameObject> it = bullets.iterator();
         while (it.hasNext()) {
             GameObject b = it.next();
+            // Player nembak ke bawah (+Y), Musuh ke atas (-Y) ? (Sesuai kode awal)
             if (b.getType().equals("PLAYER_BULLET")) {
                 b.setY(b.getY() + 7); 
             } else {
                 b.setY(b.getY() - 5); 
             }
 
+            // Hapus jika keluar layar
             if (b.getY() < 0 || b.getY() > 768) {
+                // Mekanik Unik: Jika peluru musuh lewat, kita dapat peluru tambahan
                 if (b.getType().equals("ENEMY_BULLET")) {
                     playerStats.setPeluruMeleset(playerStats.getPeluruMeleset() + 1);
                     playerStats.setSisaPeluru(playerStats.getSisaPeluru() + 1);
@@ -228,15 +278,20 @@ public class GamePresenter implements Runnable, KeyListener {
         }
     }
 
+    /**
+     * Cek semua kemungkinan tabrakan (Peluru vs Batu/Player/Musuh).
+     */
     private void checkCollisions() {
         Iterator<GameObject> itBullet = bullets.iterator();
         while (itBullet.hasNext()) {
             GameObject b = itBullet.next();
             boolean hit = false;
 
+            // 1. Peluru Kena Batu
             for (GameObject rock : obstacles) {
                 if (b.getBounds().intersects(rock.getBounds())) {
                     if (b.getType().equals("ENEMY_BULLET")) {
+                        // Bonus peluru jika peluru musuh kena batu
                         playerStats.setSisaPeluru(playerStats.getSisaPeluru() + 1);
                     }
                     hit = true; 
@@ -244,75 +299,104 @@ public class GamePresenter implements Runnable, KeyListener {
                 }
             }
 
+            // 2. Peluru Musuh Kena Player
             if (!hit && b.getType().equals("ENEMY_BULLET")) {
                 if (b.getBounds().intersects(player.getBounds())) {
-                    triggerExplosion(); 
+                    triggerExplosion(); // GAME OVER
                     hit = true; 
                 }
             }
 
+            // 3. Peluru Player Kena Musuh
             if (!hit && b.getType().equals("PLAYER_BULLET")) {
                 Iterator<GameObject> itHuman = humans.iterator(); 
                 while (itHuman.hasNext()) {
                     GameObject human = itHuman.next(); 
                     if (b.getBounds().intersects(human.getBounds())) {
-                        playerStats.setSkor(playerStats.getSkor() + 10);
-                        itHuman.remove();
+                        playerStats.setSkor(playerStats.getSkor() + 10); // Tambah Skor
+                        itHuman.remove(); // Hapus Musuh
                         hit = true;
                         break;
                     }
                 }
             }
 
+            // Jika kena sesuatu, hapus peluru
             if (hit) itBullet.remove();
         }
     }
 
+    /**
+     * Memulai sekuens ledakan saat player mati.
+     */
     private void triggerExplosion() {
         isExploding = true;
+        // Ganti player dengan objek ledakan
         explosionObj = new GameObject(player.getX()-10, player.getY()-10, 60, 60, Color.ORANGE, "EXPLOSION");
-        player.setX(-1000); 
+        player.setX(-1000); // Sembunyikan player
         audioPlayer.playSoundEffect("src/assets/audio/explosion.wav");
     }
 
+    /**
+     * Mengakhiri permainan, simpan skor, dan kembali ke menu.
+     */
     private void finishGame() {
         audioPlayer.stopMusic();
         isRunning = false;
+        
+        // Tampilkan Info
         JOptionPane.showMessageDialog(view, "GAME OVER!\nSkor Akhir: " + playerStats.getSkor());
+        
+        // Simpan ke Database
         dbModel.updateOrInsert(playerStats);
+        
+        // Bersihkan View dan kembali ke Menu
         view.dispose();
         System.out.println("Kembali ke Lobby...");
         MenuView menu = new MenuView();          
         new MenuPresenter(menu, dbModel);        
     }
 
+    /**
+     * Menyiapkan daftar objek untuk digambar oleh View.
+     */
     private void draw() {
         List<GameObject> allObjs = new ArrayList<>();
+        
+        // Gambar Player atau Ledakan
         if (!isExploding) allObjs.add(player);
         else if (explosionObj != null) allObjs.add(explosionObj);
         
+        // Gabungkan semua list objek
         allObjs.addAll(obstacles);
         allObjs.addAll(humans); 
         allObjs.addAll(bullets);
+        
+        // Kirim ke View untuk dirender
         view.render(allObjs, playerStats.getSkor(), playerStats.getSisaPeluru(), playerStats.getPeluruMeleset());
     }
+
+    // --- KEY LISTENER (Input Keyboard) ---
 
     @Override public void keyTyped(KeyEvent e) {}
 
     @Override
     public void keyPressed(KeyEvent e) {
-        if (isExploding) return; 
+        if (isExploding) return; // Kunci input saat animasi mati
 
         int code = e.getKeyCode();
+        // Kontrol Gerak
         if (code == KeyEvent.VK_W || code == KeyEvent.VK_UP) up = true;
         if (code == KeyEvent.VK_S || code == KeyEvent.VK_DOWN) down = true;
         if (code == KeyEvent.VK_A || code == KeyEvent.VK_LEFT) left = true;
         if (code == KeyEvent.VK_D || code == KeyEvent.VK_RIGHT) right = true;
         
+        // Kontrol Tembak (Z)
         if (code == KeyEvent.VK_Z) {
             playerShoot();
         }
         
+        // Cheat/Instant Game Over (Spasi)
         if (code == KeyEvent.VK_SPACE) {
              finishGame(); 
         }

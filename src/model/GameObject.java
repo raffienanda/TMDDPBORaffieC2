@@ -11,7 +11,7 @@ public class GameObject {
     private int x, y;
     private int width, height;
     private Color color;
-    private String type; // "PLAYER" (Alien), "HUMAN" (Bot), "OBSTACLE", "BULLET"
+    private String type; // "ALIEN" (Player), "HUMAN" (Bot), "OBSTACLE", "BULLET"
 
     public GameObject(int x, int y, int width, int height, Color color, String type) {
         this.x = x;

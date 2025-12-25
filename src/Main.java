@@ -1,5 +1,3 @@
-package main;
-
 import model.TBenefitModel;
 import view.MenuView;
 import presenter.MenuPresenter;

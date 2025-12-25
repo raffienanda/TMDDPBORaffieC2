@@ -8,7 +8,7 @@ public class AudioPlayer {
     
     // Default volume (100%)
     // Range: 0.0 (Mute) sampai 1.0 (Full)
-    private float currentBgmVolume = 1.0f;
+    private float currentBgmVolume = 0.5f;
     private float currentSfxVolume = 1.0f;
 
     public void playMusic(String filePath) {
